@@ -1,0 +1,57 @@
+# Use postgres/example user/password credentials
+version: '3.8'
+
+services:
+  dynamodb-local:
+      image: amazon/dynamodb-local
+      # -sharedDb makes the nosql workbench able to see tables
+      command: -jar DynamoDBLocal.jar -sharedDb -dbPath .
+      restart: always
+      ports:
+        - '8000:8000'
+#    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+#    image: "amazon/dynamodb-local:latest"
+#    container_name: dynamodb-local
+#    ports:
+#      - "8000:8000"
+#    volumes:
+#      - "./docker/dynamodb:/home/dynamodblocal/data"
+#    working_dir: /home/dynamodblocal
+#    app-node:
+#      depends_on:
+#        - dynamodb-local
+#      image: banst/awscli
+#      container_name: app-node
+#      ports:
+#        - "8080:8080"
+#      environment:
+#        AWS_ACCESS_KEY_ID: 'DUMMYIDEXAMPLE'
+#        AWS_SECRET_ACCESS_KEY: 'DUMMYEXAMPLEKEY'
+#      command:
+#        dynamodb describe-limits --endpoint-url http://dynamodb-local:8000 --region us-west-2
+#  postgres:
+#    image: postgres
+#    restart: always
+#    ports:
+#      - '5432:5432'
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: example
+#  dynamodb:
+#    image: amazon/dynamodb-local
+#    # -sharedDb makes the nosql workbench able to see tables
+#    command: -jar DynamoDBLocal.jar -sharedDb -dbPath .
+#    restart: always
+#    ports:
+#      - '8000:8000'
+#  sqs:
+#    image: softwaremill/elasticmq
+#    restart: always
+#    ports:
+#      - '9324:9324'
+#  sonarqube:
+#    container_name: sonarqube
+#    image: sonarqube:latest
+#    ports:
+#      - '9000:9000'
+#      - '9092:9092'

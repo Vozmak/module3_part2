@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link href="style.css" rel="stylesheet">
+  <title>Галерея картинок</title>
+</head>
+<body>
+<form id="authorization" method="post">
+  <label>
+    Email:
+    <input type="text" name="email" placeholder="Введите email" value="">
+  </label><br>
+  <label>
+    Пароль:
+    <input type="text" name="password" placeholder="Введите пароль" value="">
+  </label>
+  <div class="incorrect"></div><br>
+  <input type="button" value="Sign Up" id="signup">
+  <input type="submit" value="Login" id="login">
+</form>
+<script type="module" src="../build/authorization/authorization.js"></script>
+<script type="module" src="../build/authorization/signUp.js"></script>
+</body>
+</html>

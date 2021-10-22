@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="gallery.style.css">
+  <title>Title</title>
+</head>
+<body>
+<main class="gallery">
+  <div class="page">
+    <button id="previous">Предыдущая страница</button>
+    <button id="next">Следующая страница</button>
+    <p>Страница из </p>
+    <form class="sendImg" method="post" enctype="multipart/form-data">
+      <input id="addImg" type="file" name="photo" multiple accept="image/*" title="Загрузить картинку"><br>
+      <input type="submit" value="Загрузить">
+    </form>
+  </div>
+  <br>
+</main>
+<script type="module" src="../../build/gallery/displayGallery/listGallery.js"></script>
+<script type="module" src="../../build/gallery/displayGallery/addImage.js"></script>
+</body>
+</html>

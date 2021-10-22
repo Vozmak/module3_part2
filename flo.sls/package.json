@@ -1,0 +1,124 @@
+{
+  "name": "template-aws-sls",
+  "version": "1.0.0",
+  "description": "AWS + Serverless API for your application",
+  "main": "index.js",
+  "scripts": {
+    "deploy:dev": "sls deploy --stage dev --config serverless.ts -v",
+    "deploy:prod": "sls deploy --stage prod --config serverless.ts -v",
+    "deploy:test": "sls deploy --stage test --config serverless.ts -v",
+    "deploy:local": "sls offline start --stage local --config serverless.ts",
+    "sls:package:dev": "sls package --stage dev --config serverless.ts",
+    "sls:print:dev": "sls print --stage dev --config serverless.ts",
+    "build": "sls webpack --stage dev --config serverless.ts",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write .",
+    "test": "jest --watchAll --colors --coverage",
+    "test:ci": "CI=true jest --ci --colors --coverage --passWithNoTests",
+    "sqs:up": "docker-compose -f docker-compose.yml up -d sqs",
+    "sqs:list-queues": "aws sqs list-queues --endpoint-url http://localhost:9324 --profile profile_name --region region",
+    "sqs:create-queue": "aws sqs create-queue --endpoint-url http://localhost:9324 --profile profile_name --region region --queue-name queue_name[.fifo] [--attributes FifoQueue=true,ContentBasedDeduplication=true]",
+    "sqs:receive-messages": "aws sqs receive-message --endpoint-url http://localhost:9324 --profile profile_name --region region --queue-url http://localhost:9324/queue/queue_name[.fifo] --max-number-of-messages 10 --visibility-timeout 0",
+    "sqs:delete-queue": "aws sqs delete-queue --endpoint-url http://localhost:9324 --profile profile_name --region region --queue-url http://localhost:9324/queue/queue_name[.fifo]",
+    "db:up": "docker-compose -f docker-compose.yml up -d postgres",
+    "db:drop": "npx sequelize-cli db:drop",
+    "db:create": "npx sequelize-cli db:create",
+    "db:migrate": "npx sequelize-cli db:migrate",
+    "dynamodb:up": "docker-compose -f docker-compose.yml up -d dynamodb",
+    "sonarqube:up": "docker-compose -f docker-compose.yml up -d sonarqube",
+    "sonarqube-scanner": "node sonar-project.js",
+    "sonarqube-verify": "sonarqube-verify",
+    "containers:down": "docker-compose -f docker-compose.yml down"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/first-line-outsourcing/flo.sls"
+  },
+  "author": "First Line Outsourcing",
+  "contributors": [
+    {
+      "name": "Andrey Zaikin",
+      "email": "azaikin@flo.team",
+      "url": "https://github.com/zaikin-andrew"
+    },
+    {
+      "name": "Anastasia Zhivaeva",
+      "email": "azhivaeva@flo.team",
+      "url": "https://github.com/azhivaeva-flo"
+    }
+  ],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/first-line-outsourcing/flo.sls/issues"
+  },
+  "homepage": "https://github.com/first-line-outsourcing/flo.sls#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^12.1.1",
+    "@commitlint/config-conventional": "^12.1.1",
+    "@redtea/serverless-env-generator": "2.1.0",
+    "@serverless/typescript": "2.50.0",
+    "@types/aws-lambda": "8.10.78",
+    "@types/bluebird": "^3.5.32",
+    "@types/jest": "26.0.24",
+    "@types/node": "14.17.5",
+    "@types/validator": "^13.1.0",
+    "@typescript-eslint/eslint-plugin": "^4.4.0",
+    "@typescript-eslint/parser": "^4.4.0",
+    "copy-webpack-plugin": "9.0.1",
+    "deepmerge": "4.2.2",
+    "dotenv-webpack": "7.0.3",
+    "eslint": "^7.10.0",
+    "eslint-config-prettier": "^6.12.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-prettier": "^3.1.4",
+    "husky": "^4.3.0",
+    "jest": "27.0.6",
+    "prettier": "^2.1.2",
+    "pretty-quick": "^3.0.2",
+    "serverless": "2.51.0",
+    "serverless-offline": "7.0.0",
+    "serverless-offline-sns": "0.68.0",
+    "serverless-offline-sqs": "4.1.1",
+    "serverless-prune-plugin": "1.5.1",
+    "serverless-s3-local": "0.6.18",
+    "serverless-webpack": "5.5.1",
+    "sonarqube-scanner": "^2.7.0",
+    "sonarqube-verify": "^1.0.2",
+    "ts-jest": "27.0.3",
+    "ts-loader": "9.2.3",
+    "tsconfig-paths-webpack-plugin": "3.5.1",
+    "typescript": "4.3.5",
+    "webpack": "5.43.0",
+    "webpack-node-externals": "3.0.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.37.0",
+    "@redtea/format-axios-error": "^2.0.2",
+    "alai": "^1.0.3",
+    "aws-sdk": "^2.893.0",
+    "axios": "^0.21.3",
+    "bcrypt": "^5.0.1",
+    "dotenv": "^8.6.0",
+    "dynamoose": "^2.7.3",
+    "jsonwebtoken": "^8.5.1",
+    "lambda-multipart-parser": "^1.0.1",
+    "mongoose": "^6.0.10",
+    "node-uuid": "^1.4.8",
+    "nodemailer": "^6.6.1",
+    "plist": "^3.0.4",
+    "reflect-metadata": "^0.1.13",
+    "sequelize": "^5.22.4",
+    "sequelize-typescript": "^1.1.0",
+    "source-map-support": "^0.5.19",
+    "xml2js": "^0.4.23"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  }
+}
