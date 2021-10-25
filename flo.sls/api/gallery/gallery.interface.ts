@@ -1,5 +1,5 @@
 export interface Gallery {
-  objects: Array<string>;
+  objects: Array<string | undefined>;
   page: number;
   total: number;
 }

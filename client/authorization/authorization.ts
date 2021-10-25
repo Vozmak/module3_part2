@@ -40,7 +40,7 @@ form.addEventListener("submit", async event => {
 });
 
 async function authorizationUser(user: User): Promise<ErrorMsg | Token>  {
-  let response: Response = await fetch('http://localhost:3000/local/login', {
+  let response: Response = await fetch('https://44qnlsifsc.execute-api.us-east-1.amazonaws.com/test/login', {
     method: "POST",
     headers: {
       "Content-type": "application/json"

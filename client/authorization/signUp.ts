@@ -26,7 +26,7 @@ signUpButton.addEventListener('click', async event => {
 
 
 async function signUp(user: User) {
-    const response: Response = await fetch(`http://localhost:3000/local/signup`, {
+    const response: Response = await fetch(`https://44qnlsifsc.execute-api.us-east-1.amazonaws.com/test/signup`, {
         method: "POST",
         headers: {
             "Content-type": 'application/json'

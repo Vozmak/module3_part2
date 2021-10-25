@@ -1,7 +1,7 @@
 import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
 import { HttpInternalServerError } from '@errors/http';
 import { getEnv } from '@helper/environment';
-import * as bcrypt from 'bcrypt';
+import * as bcryptjs from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { SuccessSignup, Token, User } from './auth.interface';
 
@@ -27,7 +27,7 @@ export class AuthService {
             S: user.email,
           },
           Password: {
-            S: await bcrypt.hash(user.password, Number(getEnv('SALTROUNDS', true))),
+            S: await bcryptjs.hash(user.password, Number(getEnv('SALTROUNDS', true))),
           },
         },
       };

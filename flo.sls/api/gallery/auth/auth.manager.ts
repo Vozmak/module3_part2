@@ -1,7 +1,7 @@
 import { GetItemCommand, GetItemInput } from '@aws-sdk/client-dynamodb';
 import { HttpBadRequestError, HttpInternalServerError } from '@errors/http';
 import { userValidation } from '@helper/gallery/usersValidator';
-import { compare } from 'bcrypt';
+import * as bcryptjs from 'bcryptjs';
 import { SuccessSignup, Token, User, VerifyUser } from './auth.interface';
 import { AuthService } from './auth.service';
 import { DynamoClient } from '@services/dynamoDBClient';
@@ -35,7 +35,7 @@ export class AuthManager {
 
       if (!verifyUser) throw new HttpBadRequestError(`Пользователь ${user.email} не найден`);
       // @ts-ignore
-      const validate: boolean = await compare(user.password, userFindResult.Item.Password.S);
+      const validate: boolean = await bcryptjs.compare(user.password, userFindResult.Item.Password.S);
       if (!validate) throw new HttpBadRequestError('Неверный пароль');
     } catch (e) {
       if (e instanceof HttpBadRequestError) throw new HttpBadRequestError(e.message);

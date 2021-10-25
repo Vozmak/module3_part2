@@ -5,7 +5,7 @@ const imgForm = <HTMLFormElement>document.querySelector('.sendImg');
 imgForm.addEventListener('submit', async (event: Event) => {
     event.preventDefault();
 
-    const uploadImg: Response = await fetch(`http://localhost:3000/local/gallery/upload`, {
+    const uploadImg: Response = await fetch(`https://44qnlsifsc.execute-api.us-east-1.amazonaws.com/test/gallery/upload`, {
         method: "POST",
         headers: {
             Authorization: `Bearer ${localStorage.token}`

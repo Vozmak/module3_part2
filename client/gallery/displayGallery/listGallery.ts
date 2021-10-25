@@ -43,7 +43,7 @@ async function displayImgList(): Promise<void> {
   const limit: string = searchParams.get('limit') || localStorage.limit || '0';
   const filter: string = searchParams.get('filter') || 'all';
 
-  const imgList: Response = await fetch(`http://localhost:3000/local/gallery?page=${page}&limit=${limit}&filter=${filter}`, {
+  const imgList: Response = await fetch(`https://44qnlsifsc.execute-api.us-east-1.amazonaws.com/test/gallery?page=${page}&limit=${limit}&filter=${filter}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${localStorage.token}`
