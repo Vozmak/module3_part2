@@ -30,7 +30,7 @@ export const addImageGallery: Handler<APIGatewayLambdaEvent<null>, string> = asy
     // @ts-ignore
     const images: MultipartRequest = await parser.parse(event);
     //@ts-ignore
-    const userUploadEmail: string = event.requestContext!.authorizer.claims.user.email;
+    const userUploadEmail: string = event.requestContext!.authorizer.context;
 
     return await manager.uploadImages(images, userUploadEmail);
   } catch (error) {
