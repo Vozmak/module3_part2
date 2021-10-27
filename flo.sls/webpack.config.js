@@ -32,7 +32,7 @@ module.exports = {
   mode: slsw.lib.options.stage === 'local' ? 'development' : 'production',
   // we use webpack-node-externals to excludes all node deps.
   // You can manually set the externals too.
-  externals: [nodeExternals({ modulesDir: path.resolve(__dirname, './node_modules') })],
+  externals: [nodeExternals({ modulesDir: path.resolve(__dirname, './node_modules')}), { sharp: 'commonjs sharp' }],
   module: {
     rules: [
       {

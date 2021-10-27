@@ -1,7 +1,7 @@
-import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, PutItemCommand, PutItemInput } from '@aws-sdk/client-dynamodb';
 import { HttpInternalServerError } from '@errors/http';
 import { getEnv } from '@helper/environment';
-import * as bcrypt from 'bcrypt';
+import * as bcryptjs from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { SuccessSignup, Token, User } from './auth.interface';
 
@@ -20,14 +20,14 @@ export class AuthService {
 
   async signUp(user: User, DynamoClient: DynamoDBClient): Promise<SuccessSignup> {
     try {
-      const params = {
-        TableName: 'GalleryM3P2',
+      const params: PutItemInput = {
+        TableName: getEnv('USERS_TABLE_NAME'),
         Item: {
           UserEmail: {
             S: user.email,
           },
           Password: {
-            S: await bcrypt.hash(user.password, Number(getEnv('SALTROUNDS', true))),
+            S: await bcryptjs.hash(user.password, Number(getEnv('SALTROUNDS', true))),
           },
         },
       };

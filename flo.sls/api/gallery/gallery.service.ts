@@ -1,17 +1,21 @@
 import { GetItemCommand, GetItemInput, UpdateItemCommand, UpdateItemCommandInput } from '@aws-sdk/client-dynamodb';
+import { AttributeValue } from '@aws-sdk/client-dynamodb/dist-types/ts3.4';
 import { HttpBadRequestError, HttpInternalServerError } from '@errors/http';
+import { getEnv } from '@helper/environment';
 import { DynamoClient } from '@services/dynamoDBClient';
 import { S3Service } from '@services/s3.service';
+import { GetObjectOutput } from 'aws-sdk/clients/s3';
 import { MultipartFile, MultipartRequest } from 'lambda-multipart-parser';
 import { Gallery } from './gallery.interface';
+import * as sharp from 'sharp';
 
 export class GalleryService {
   async getImages(page: number, limit: number, filter: string): Promise<Gallery> {
-    let images: Array<string>;
+    let images: Array<string | undefined>;
     let total: number;
     try {
       const params: GetItemInput = {
-        TableName: 'GalleryM3P2',
+        TableName: getEnv('USERS_TABLE_NAME'),
         Key: {
           UserEmail: {
             S: filter,
@@ -21,7 +25,7 @@ export class GalleryService {
       };
 
       const GetItem = new GetItemCommand(params);
-      const imgURLs: Array<string> | undefined = (await DynamoClient.send(GetItem)).Item?.Images.SS;
+      const imgURLs: AttributeValue | undefined = (await DynamoClient.send(GetItem)).Item?.Images;
 
       if (!imgURLs) {
         throw new HttpBadRequestError('Пользователь загрузил 0 картинок');
@@ -29,10 +33,10 @@ export class GalleryService {
 
       if (limit === 0) {
         total = 1;
-        images = imgURLs;
+        images = imgURLs.L!.map((img) => img.M!.Path.S);
       } else {
-        total = Math.ceil(imgURLs.length / limit);
-        images = imgURLs.slice((page - 1) * limit, page * limit);
+        total = Math.ceil(imgURLs.L!.length / limit);
+        images = imgURLs!.L!.slice((page - 1) * limit, page * limit).map((img) => img.M!.Path.S);
       }
 
       if (page > total || page < 1) throw new HttpBadRequestError(`Страница не найдена`);
@@ -63,12 +67,17 @@ export class GalleryService {
   async saveImages(files: MultipartRequest, userUploadEmail: string): Promise<Array<string>> {
     const filesArray: Array<MultipartFile> = files.files;
     const uploadImages: Array<string> = [];
-    const uploadURL: Array<string> = [];
+    const uploadURL: Array<{ Path: AttributeValue; Metadata: AttributeValue }> = [];
+
     try {
       const S3 = new S3Service();
+
       for (const img of filesArray) {
-        const key = `module3_part2/${img.filename}`;
-        const findImage = await S3.get(key, 'gallery-trainee')
+        const metadata = img.contentType; //await sharp(img.content).metadata();
+        const user: string = userUploadEmail.replace(/@.+/, '');
+        const key = `${user}/${img.filename}`;
+
+        const findImage: GetObjectOutput | null = await S3.get(key, getEnv('IMAGES_BUCKET_NAME'))
           .then((res) => res)
           .catch((e) => {
             if (e.code !== 'NoSuchKey') throw e;
@@ -79,22 +88,31 @@ export class GalleryService {
           continue;
         }
 
-        await S3.put(key, img.content, 'gallery-trainee', img.contentType);
-
-        const imageURL = S3.getPreSignedGetUrl(key, 'gallery-trainee').split('?', 1)[0];
+        await S3.put(key, img.content, getEnv('IMAGES_BUCKET_NAME'), img.contentType);
+        const imageURL: string = S3.getPreSignedGetUrl(key, getEnv('IMAGES_BUCKET_NAME')).split('?', 1)[0];
 
         uploadImages.push(img.filename);
-        uploadURL.push(imageURL);
+        uploadURL.push({ Path: { S: imageURL }, Metadata: { S: JSON.stringify(metadata) } });
       }
 
+      if (uploadURL.length === 0) {
+        throw new HttpBadRequestError('Нет изображений для загрузки, либо изображение уже существует.');
+      }
       const paramsUser: UpdateItemCommandInput = {
-        TableName: 'GalleryM3P2',
+        TableName: getEnv('USERS_TABLE_NAME'),
         ExpressionAttributeNames: {
           '#I': 'Images',
         },
         ExpressionAttributeValues: {
-          ':url': {
-            SS: uploadURL,
+          ':imgInfo': {
+            L: [
+              {
+                M: uploadURL[0],
+              },
+            ],
+          },
+          ':emptyList': {
+            L: [],
           },
         },
         Key: {
@@ -102,16 +120,23 @@ export class GalleryService {
             S: userUploadEmail,
           },
         },
-        UpdateExpression: 'ADD #I :url',
+        UpdateExpression: 'SET #I = list_append(if_not_exists(#I, :emptyList), :imgInfo)',
       };
       const paramsAll: UpdateItemCommandInput = {
-        TableName: 'GalleryM3P2',
+        TableName: getEnv('USERS_TABLE_NAME'),
         ExpressionAttributeNames: {
           '#I': 'Images',
         },
         ExpressionAttributeValues: {
-          ':url': {
-            SS: uploadURL,
+          ':imgInfo': {
+            L: [
+              {
+                M: uploadURL[0],
+              },
+            ],
+          },
+          ':emptyList': {
+            L: [],
           },
         },
         Key: {
@@ -119,7 +144,7 @@ export class GalleryService {
             S: 'all',
           },
         },
-        UpdateExpression: 'ADD #I :url',
+        UpdateExpression: 'SET #I = list_append(if_not_exists(#I, :emptyList), :imgInfo)',
       };
 
       const UpdateItemUser = new UpdateItemCommand(paramsUser);
@@ -128,6 +153,7 @@ export class GalleryService {
       await DynamoClient.send(UpdateItemUser);
       await DynamoClient.send(UpdateItemAll);
     } catch (err) {
+      console.log(err);
       throw new HttpInternalServerError(err);
     }
 

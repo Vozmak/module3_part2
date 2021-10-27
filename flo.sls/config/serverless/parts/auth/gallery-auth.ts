@@ -1,9 +1,9 @@
-import { AWSPartitial } from '../../../types';
+import { AWSPartitial } from '../../types';
 
 export const authConfig: AWSPartitial = {
   functions: {
     signUp: {
-      handler: 'api/gallery/auth/handler.signUp',
+      handler: 'api/auth/gallery-auth/handler.signUp',
       memorySize: 128,
       events: [
         {
@@ -24,7 +24,7 @@ export const authConfig: AWSPartitial = {
       ],
     },
     login: {
-      handler: 'api/gallery/auth/handler.login',
+      handler: 'api/auth/gallery-auth/handler.login',
       memorySize: 128,
       events: [
         {

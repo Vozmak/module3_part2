@@ -84,8 +84,9 @@ export const authentication: APIGatewayTokenAuthorizerWithContextHandler<Record<
   }
 
   await jwt.verify(event.authorizationToken.slice(7), getEnv('SECRET', true));
-
-  return generatePolicy('user', 'Allow', '*', {});
+  const payload = await jwt.decode(event.authorizationToken.slice(7));
+  // @ts-ignore
+  return generatePolicy('user', 'Allow', '*', { context: payload!.user.email });
 };
 
 export function generatePolicy<C extends APIGatewayAuthorizerResult['context']>(

@@ -1,7 +1,8 @@
-import { GetItemCommand, GetItemInput } from '@aws-sdk/client-dynamodb';
+import { GetItemCommand, GetItemInput, GetItemOutput } from '@aws-sdk/client-dynamodb';
 import { HttpBadRequestError, HttpInternalServerError } from '@errors/http';
+import { getEnv } from '@helper/environment';
 import { userValidation } from '@helper/gallery/usersValidator';
-import { compare } from 'bcrypt';
+import * as bcryptjs from 'bcryptjs';
 import { SuccessSignup, Token, User, VerifyUser } from './auth.interface';
 import { AuthService } from './auth.service';
 import { DynamoClient } from '@services/dynamoDBClient';
@@ -22,7 +23,7 @@ export class AuthManager {
       }
 
       const params: GetItemInput = {
-        TableName: 'GalleryM3P2',
+        TableName: getEnv('USERS_TABLE_NAME'),
         Key: {
           UserEmail: {
             S: user.email,
@@ -30,12 +31,12 @@ export class AuthManager {
         },
       };
       const GetItem = new GetItemCommand(params);
-      const userFindResult = await DynamoClient.send(GetItem);
+      const userFindResult: GetItemOutput = await DynamoClient.send(GetItem);
       verifyUser = userFindResult.Item;
 
       if (!verifyUser) throw new HttpBadRequestError(`Пользователь ${user.email} не найден`);
       // @ts-ignore
-      const validate: boolean = await compare(user.password, userFindResult.Item.Password.S);
+      const validate: boolean = await bcryptjs.compare(user.password, userFindResult.Item.Password.S);
       if (!validate) throw new HttpBadRequestError('Неверный пароль');
     } catch (e) {
       if (e instanceof HttpBadRequestError) throw new HttpBadRequestError(e.message);
@@ -53,7 +54,7 @@ export class AuthManager {
     }
 
     const params: GetItemInput = {
-      TableName: 'GalleryM3P2',
+      TableName: getEnv('USERS_TABLE_NAME'),
       Key: {
         UserEmail: {
           S: user.email,
@@ -62,8 +63,8 @@ export class AuthManager {
     };
 
     const GetItem = new GetItemCommand(params);
-    const userFindResult = await DynamoClient.send(GetItem);
-    console.log(userFindResult);
+    const userFindResult: GetItemOutput = await DynamoClient.send(GetItem);
+
     const userVerify: VerifyUser | undefined = userFindResult.Item;
     if (userVerify) {
       throw new HttpBadRequestError('Пользователь уже зарегестрирован');

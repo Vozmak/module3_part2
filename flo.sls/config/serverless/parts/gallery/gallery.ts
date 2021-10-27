@@ -4,7 +4,8 @@ export const galleryConfig: AWSPartitial = {
   functions: {
     getGallery: {
       handler: 'api/gallery/handler.getGallery',
-      memorySize: 128,
+      memorySize: 1536,
+      timeout: 10,
       events: [
         {
           http: {
@@ -45,6 +46,9 @@ export const galleryConfig: AWSPartitial = {
             },
             authorizer: {
               name: 'GalleryAuthorizerRestApi',
+              // identitySource: '${method.request.header.Authorization.slice(7)}',
+              // claims: ['$context.authorizer.claims.user'],
+              // scopes: ['user.email'],
             },
           },
         },
