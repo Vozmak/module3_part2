@@ -9,3 +9,8 @@ export interface Query {
   limit?: string;
   filter?: string;
 }
+
+export interface ResponseSuccess {
+  statusCode: number;
+  body: string;
+}

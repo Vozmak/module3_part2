@@ -33,7 +33,7 @@ export const TableConfig: AWSPartitial = {
     Resources: {
       UserTable: {
         Type: 'AWS::DynamoDB::Table',
-        // DeletionPolicy: 'Retain',
+        DeletionPolicy: 'Retain',
         Properties: {
           AttributeDefinitions: [
             {

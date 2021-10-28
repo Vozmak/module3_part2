@@ -6,7 +6,7 @@ import { TableConfig } from './config/serverless/tables/users.table';
 import { joinParts } from './config/serverless/utils';
 
 const masterConfig: AWS = {
-  service: 'template-sls',
+  service: 'vstepanov-sls',
   configValidationMode: 'warn',
   variablesResolutionMode: '20210326',
   unresolvedVariablesNotificationMode: 'error',
@@ -109,7 +109,7 @@ const masterConfig: AWS = {
   plugins: [
     '@redtea/serverless-env-generator',
     'serverless-webpack',
-    'serverless-offline-sqs',
+    // 'serverless-offline-sqs',
     'serverless-offline',
     // 'serverless-offline-sns',
     // 'serverless-s3-local',

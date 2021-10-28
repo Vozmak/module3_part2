@@ -6,7 +6,7 @@ import { DynamoClient } from '@services/dynamoDBClient';
 import { S3Service } from '@services/s3.service';
 import { GetObjectOutput } from 'aws-sdk/clients/s3';
 import { MultipartFile, MultipartRequest } from 'lambda-multipart-parser';
-import { Gallery } from './gallery.interface';
+import { Gallery, ResponseSuccess } from './gallery.interface';
 import * as sharp from 'sharp';
 
 export class GalleryService {
@@ -52,16 +52,22 @@ export class GalleryService {
     };
   }
 
-  async uploadImages(images: MultipartRequest, userUploadId: string): Promise<string> {
+  async uploadImages(images: MultipartRequest, userUploadId: string): Promise<ResponseSuccess> {
     let uploadImages: Array<string>;
     try {
-      // // @ts-ignore
       uploadImages = await this.saveImages(images, userUploadId);
     } catch (e) {
+      if (e instanceof HttpBadRequestError) {
+        throw new HttpBadRequestError(e.message);
+      }
+
       throw new HttpInternalServerError(e.message);
     }
 
-    return `Загружены следующие изображения:\n${uploadImages.join('\n')}`;
+    return {
+      statusCode: 200,
+      body: `Загружены следующие изображения:\n${uploadImages.join('\n')}`,
+    };
   }
 
   async saveImages(files: MultipartRequest, userUploadEmail: string): Promise<Array<string>> {
@@ -98,6 +104,7 @@ export class GalleryService {
       if (uploadURL.length === 0) {
         throw new HttpBadRequestError('Нет изображений для загрузки, либо изображение уже существует.');
       }
+
       const paramsUser: UpdateItemCommandInput = {
         TableName: getEnv('USERS_TABLE_NAME'),
         ExpressionAttributeNames: {
@@ -153,7 +160,10 @@ export class GalleryService {
       await DynamoClient.send(UpdateItemUser);
       await DynamoClient.send(UpdateItemAll);
     } catch (err) {
-      console.log(err);
+      if (err instanceof HttpBadRequestError) {
+        throw new HttpBadRequestError(err.message);
+      }
+
       throw new HttpInternalServerError(err);
     }
 

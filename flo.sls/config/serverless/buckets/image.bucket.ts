@@ -37,7 +37,7 @@ export const BucketConfig: AWSPartitial = {
     Resources: {
       imagesBucket: {
         Type: 'AWS::S3::Bucket',
-        // DeletionPolicy: 'Retain',
+        DeletionPolicy: 'Retain',
         Properties: {
           AccessControl: 'PublicReadWrite',
           BucketName: '${file(env.yml):${self:provider.stage}.IMAGES_BUCKET_NAME}',

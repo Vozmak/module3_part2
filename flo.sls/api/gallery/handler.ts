@@ -1,7 +1,7 @@
 import { Handler } from 'aws-lambda/handler';
 import * as parser from 'lambda-multipart-parser';
 import { MultipartRequest } from 'lambda-multipart-parser';
-import { Gallery, Query } from './gallery.interface';
+import { Gallery, Query, ResponseSuccess } from './gallery.interface';
 import { log } from '@helper/logger';
 import { errorHandler } from '@helper/rest-api/error-handler';
 import { APIGatewayLambdaEvent } from '@interfaces/api-gateway-lambda.interface';
@@ -21,7 +21,7 @@ export const getGallery: Handler<APIGatewayLambdaEvent<null>, Gallery> = async (
   }
 };
 
-export const addImageGallery: Handler<APIGatewayLambdaEvent<null>, string> = async (event) => {
+export const addImageGallery: Handler<APIGatewayLambdaEvent<null>, ResponseSuccess> = async (event) => {
   // log(event);
 
   try {

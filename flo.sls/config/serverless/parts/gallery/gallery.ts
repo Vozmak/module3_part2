@@ -4,7 +4,7 @@ export const galleryConfig: AWSPartitial = {
   functions: {
     getGallery: {
       handler: 'api/gallery/handler.getGallery',
-      memorySize: 1536,
+      memorySize: 128,
       timeout: 10,
       events: [
         {
@@ -29,7 +29,7 @@ export const galleryConfig: AWSPartitial = {
     },
     addImageGallery: {
       handler: 'api/gallery/handler.addImageGallery',
-      memorySize: 500,
+      memorySize: 128,
       events: [
         {
           http: {
