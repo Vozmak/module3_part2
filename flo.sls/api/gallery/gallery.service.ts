@@ -1,5 +1,6 @@
 import { GetItemCommand, GetItemInput, UpdateItemCommand, UpdateItemCommandInput } from '@aws-sdk/client-dynamodb';
 import { AttributeValue } from '@aws-sdk/client-dynamodb/dist-types/ts3.4';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { HttpBadRequestError, HttpInternalServerError } from '@errors/http';
 import { getEnv } from '@helper/environment';
 import { DynamoClient } from '@services/dynamoDBClient';
@@ -25,18 +26,23 @@ export class GalleryService {
       };
 
       const GetItem = new GetItemCommand(params);
-      const imgURLs: AttributeValue | undefined = (await DynamoClient.send(GetItem)).Item?.Images;
+      const { Item } = await DynamoClient.send(GetItem);
+      if (!Item) {
+        throw new HttpBadRequestError('User not found.');
+      }
 
-      if (!imgURLs) {
+      const { Images } = unmarshall(Item);
+
+      if (Images.length === 0) {
         throw new HttpBadRequestError('Пользователь загрузил 0 картинок');
       }
 
       if (limit === 0) {
         total = 1;
-        images = imgURLs.L!.map((img) => img.M!.Path.S);
+        images = Images.map((img) => img.Path);
       } else {
-        total = Math.ceil(imgURLs.L!.length / limit);
-        images = imgURLs!.L!.slice((page - 1) * limit, page * limit).map((img) => img.M!.Path.S);
+        total = Math.ceil(Images.length / limit);
+        images = Images.slice((page - 1) * limit, page * limit).map((img) => img.Path);
       }
 
       if (page > total || page < 1) throw new HttpBadRequestError(`Страница не найдена`);

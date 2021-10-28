@@ -95,7 +95,8 @@
     "webpack-node-externals": "3.0.0"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.37.0",
+    "@aws-sdk/client-dynamodb": "^3.38.0",
+    "@aws-sdk/util-dynamodb": "^3.38.0",
     "@redtea/format-axios-error": "^2.0.2",
     "alai": "^1.0.3",
     "aws-sdk": "^2.893.0",
