@@ -14,15 +14,9 @@ export const BucketConfig: AWSPartitial = {
               's3:CreateBucket',
               's3:ListBuckets',
               's3:GetBucketCors',
-              's3:GetBucketLocation',
-              's3:GetBucketPolicy',
-              's3:GetBucketPolicyStatus',
               's3:GetBucket',
-              's3:GetBucketAcl',
               's3:GetObject',
-              's3:GetObjectAcl',
               's3:PutObject',
-              's3:PutObjectAcl',
             ],
             Resource: [
               'arn:aws:s3:::${file(env.yml):${self:provider.stage}.IMAGES_BUCKET_NAME}',
@@ -44,6 +38,7 @@ export const BucketConfig: AWSPartitial = {
           CorsConfiguration: {
             CorsRules: [
               {
+                AllowedHeaders: ['*'],
                 AllowedMethods: ['GET', 'PUT', 'HEAD', 'POST', 'DELETE'],
                 AllowedOrigins: ['*'],
               },

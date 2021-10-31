@@ -27,15 +27,15 @@ export const galleryConfig: AWSPartitial = {
         },
       ],
     },
-    addImageGallery: {
-      handler: 'api/gallery/handler.addImageGallery',
+    getPreSignedUrl: {
+      handler: 'api/gallery/handler.getPreSignedUrl',
       memorySize: 128,
       events: [
         {
           http: {
             path: '/gallery/upload',
-            method: 'post',
-            integration: 'lambda-proxy',
+            method: 'POST',
+            integration: 'lambda',
             cors: true,
             response: {
               headers: {
@@ -50,6 +50,24 @@ export const galleryConfig: AWSPartitial = {
               // claims: ['$context.authorizer.claims.user'],
               // scopes: ['user.email'],
             },
+          },
+        },
+      ],
+    },
+    saveImgToDB: {
+      handler: 'api/gallery/handler.saveImgToDB',
+      memorySize: 128,
+      events: [
+        {
+          s3: {
+            bucket: '${file(env.yml):${self:provider.stage}.IMAGES_BUCKET_NAME}',
+            event: 's3:ObjectCreated:*',
+            // rules: [
+            //   {
+            //     prefix: 'strela996@bk.ru/',
+            //   },
+            // ],
+            existing: true,
           },
         },
       ],

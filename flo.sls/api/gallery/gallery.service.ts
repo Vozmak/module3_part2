@@ -1,13 +1,11 @@
 import { GetItemCommand, GetItemInput, UpdateItemCommand, UpdateItemCommandInput } from '@aws-sdk/client-dynamodb';
-import { AttributeValue } from '@aws-sdk/client-dynamodb/dist-types/ts3.4';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { HttpBadRequestError, HttpInternalServerError } from '@errors/http';
 import { getEnv } from '@helper/environment';
 import { DynamoClient } from '@services/dynamoDBClient';
 import { S3Service } from '@services/s3.service';
 import { GetObjectOutput } from 'aws-sdk/clients/s3';
-import { MultipartFile, MultipartRequest } from 'lambda-multipart-parser';
-import { Gallery, ResponseSuccess } from './gallery.interface';
+import { Gallery } from './gallery.interface';
 import * as sharp from 'sharp';
 
 export class GalleryService {
@@ -58,58 +56,13 @@ export class GalleryService {
     };
   }
 
-  async uploadImages(images: MultipartRequest, userUploadId: string): Promise<ResponseSuccess> {
-    let uploadImages: Array<string>;
-    try {
-      uploadImages = await this.saveImages(images, userUploadId);
-    } catch (e) {
-      if (e instanceof HttpBadRequestError) {
-        throw new HttpBadRequestError(e.message);
-      }
-
-      throw new HttpInternalServerError(e.message);
-    }
-
-    return {
-      statusCode: 200,
-      body: `Загружены следующие изображения:\n${uploadImages.join('\n')}`,
-    };
-  }
-
-  async saveImages(files: MultipartRequest, userUploadEmail: string): Promise<Array<string>> {
-    const filesArray: Array<MultipartFile> = files.files;
-    const uploadImages: Array<string> = [];
-    const uploadURL: Array<{ Path: AttributeValue; Metadata: AttributeValue }> = [];
-
+  async getPreSignedPutUrl(imageName: string, userUploadEmail: string): Promise<string> {
+    let imagePutUrl: string;
     try {
       const S3 = new S3Service();
+      const key = `${userUploadEmail}/${imageName}`;
 
-      for (const img of filesArray) {
-        const metadata = img.contentType; //await sharp(img.content).metadata();
-        const user: string = userUploadEmail.replace(/@.+/, '');
-        const key = `${user}/${img.filename}`;
-
-        const findImage: GetObjectOutput | null = await S3.get(key, getEnv('IMAGES_BUCKET_NAME'))
-          .then((res) => res)
-          .catch((e) => {
-            if (e.code !== 'NoSuchKey') throw e;
-            return null;
-          });
-
-        if (findImage) {
-          continue;
-        }
-
-        await S3.put(key, img.content, getEnv('IMAGES_BUCKET_NAME'), img.contentType);
-        const imageURL: string = S3.getPreSignedGetUrl(key, getEnv('IMAGES_BUCKET_NAME')).split('?', 1)[0];
-
-        uploadImages.push(img.filename);
-        uploadURL.push({ Path: { S: imageURL }, Metadata: { S: JSON.stringify(metadata) } });
-      }
-
-      if (uploadURL.length === 0) {
-        throw new HttpBadRequestError('Нет изображений для загрузки, либо изображение уже существует.');
-      }
+      imagePutUrl = S3.getPreSignedPutUrl(key, getEnv('IMAGES_BUCKET_NAME'));
 
       const paramsUser: UpdateItemCommandInput = {
         TableName: getEnv('USERS_TABLE_NAME'),
@@ -120,7 +73,14 @@ export class GalleryService {
           ':imgInfo': {
             L: [
               {
-                M: uploadURL[0],
+                M: {
+                  Path: {
+                    S: imagePutUrl.split('?', 1)[0],
+                  },
+                  Status: {
+                    S: 'OPEN',
+                  },
+                },
               },
             ],
           },
@@ -144,7 +104,14 @@ export class GalleryService {
           ':imgInfo': {
             L: [
               {
-                M: uploadURL[0],
+                M: {
+                  Path: {
+                    S: imagePutUrl.split('?', 1)[0],
+                  },
+                  Status: {
+                    S: 'OPEN',
+                  },
+                },
               },
             ],
           },
@@ -165,14 +132,107 @@ export class GalleryService {
 
       await DynamoClient.send(UpdateItemUser);
       await DynamoClient.send(UpdateItemAll);
-    } catch (err) {
-      if (err instanceof HttpBadRequestError) {
-        throw new HttpBadRequestError(err.message);
+    } catch (e) {
+      if (e instanceof HttpBadRequestError) {
+        throw new HttpBadRequestError(e.message);
       }
 
-      throw new HttpInternalServerError(err);
+      throw new HttpInternalServerError(e.message);
     }
 
-    return uploadImages;
+    return imagePutUrl;
+  }
+
+  async saveImgToDB(key: string, metadata: GetObjectOutput, S3: S3Service): Promise<void> {
+    const userEmail = key.split('/', 1)[0];
+    const imgGetURL: string = S3.getPreSignedGetUrl(key, getEnv('IMAGES_BUCKET_NAME')).split('?', 1)[0];
+
+    const params: GetItemInput = {
+      TableName: getEnv('USERS_TABLE_NAME'),
+      Key: {
+        UserEmail: {
+          S: userEmail,
+        },
+      },
+      ProjectionExpression: 'Images',
+    };
+    const getItemCommand = new GetItemCommand(params);
+    const { Item } = await DynamoClient.send(getItemCommand);
+    if (!Item) {
+      throw new HttpBadRequestError('User not found.');
+    }
+
+    const { Images } = unmarshall(Item);
+    const imageIndex = Images.findIndex((path) => path.Path === imgGetURL);
+
+    const paramsUser: UpdateItemCommandInput = {
+      TableName: getEnv('USERS_TABLE_NAME'),
+      ExpressionAttributeNames: {
+        '#I': 'Images',
+      },
+      ExpressionAttributeValues: {
+        ':imgInfo': {
+          M: {
+            Path: {
+              S: imgGetURL,
+            },
+            Metadata: {
+              S: 'JSON.stringify(metadata)',
+            },
+            Status: {
+              S: 'CLOSED',
+            },
+          },
+        },
+      },
+      Key: {
+        UserEmail: {
+          S: userEmail,
+        },
+      },
+      UpdateExpression: `SET #I[${imageIndex}] = :imgInfo`,
+    };
+    const paramsAll: UpdateItemCommandInput = {
+      TableName: getEnv('USERS_TABLE_NAME'),
+      ExpressionAttributeNames: {
+        '#I': 'Images',
+      },
+      ExpressionAttributeValues: {
+        ':imgInfo': {
+          L: [
+            {
+              M: {
+                Path: {
+                  S: imgGetURL,
+                },
+                Metadata: {
+                  S: 'JSON.stringify(metadata)',
+                },
+                Status: {
+                  S: 'CLOSED',
+                },
+              },
+            },
+          ],
+        },
+        ':emptyList': {
+          L: [],
+        },
+      },
+      Key: {
+        UserEmail: {
+          S: 'all',
+        },
+      },
+      UpdateExpression: `SET #I[${imageIndex}] = :imgInfo`,
+    };
+
+    const UpdateItemUser = new UpdateItemCommand(paramsUser);
+    const UpdateItemAll = new UpdateItemCommand(paramsAll);
+
+    await DynamoClient.send(UpdateItemUser);
+    await DynamoClient.send(UpdateItemAll);
+
+    return;
   }
 }

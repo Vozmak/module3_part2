@@ -14,3 +14,7 @@ export interface ResponseSuccess {
   statusCode: number;
   body: string;
 }
+
+export interface Image {
+  imageName: string;
+}

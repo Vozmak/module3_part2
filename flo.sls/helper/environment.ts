@@ -17,6 +17,8 @@ const envs: Record<string, string | undefined> = {
   IMAGES_BUCKET_NAME: process.env.IMAGES_BUCKET_NAME,
   SECRET: process.env.SECRET,
   SALTROUNDS: process.env.SALTROUNDS,
+  ACCESSKEYID: process.env.ACCESSKEYID,
+  SECRETACCESSKEY: process.env.SECRETACCESSKEY,
 };
 
 export type Stage = 'local' | 'dev' | 'test' | 'prod';
