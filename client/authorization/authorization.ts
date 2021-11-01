@@ -1,3 +1,4 @@
+import { lambdaUrl } from '../env.js';
 import {getUser} from "../helpers/getUser.js";
 
 if (localStorage.timestamp < Date.now()) {
@@ -40,7 +41,7 @@ form.addEventListener("submit", async event => {
 });
 
 async function authorizationUser(user: User): Promise<ErrorMsg | Token>  {
-  let response: Response = await fetch('http://localhost:3000/local/login', {
+  let response: Response = await fetch(`${lambdaUrl}login`, {
     method: "POST",
     headers: {
       "Content-type": "application/json"

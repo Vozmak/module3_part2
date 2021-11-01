@@ -1,3 +1,4 @@
+import { lambdaUrl } from '../env.js';
 import {getUser} from "../helpers/getUser.js";
 
 interface User {
@@ -26,7 +27,7 @@ signUpButton.addEventListener('click', async event => {
 
 
 async function signUp(user: User) {
-    const response: Response = await fetch(`http://localhost:3000/local/signup`, {
+    const response: Response = await fetch(`${lambdaUrl}signup`, {
         method: "POST",
         headers: {
             "Content-type": 'application/json'
