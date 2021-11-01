@@ -27,7 +27,7 @@ export const getPreSignedUrl: Handler<APIGatewayLambdaEvent<Image>, string> = as
     const manager = new GalleryManager();
 
     const { imageName } = event.body;
-    //@ts-ignore
+
     const userUploadEmail: string = event.enhancedAuthContext.context;
 
     return await manager.getPreSignedPutUrl(imageName, userUploadEmail);

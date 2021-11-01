@@ -24,7 +24,7 @@ export class GalleryManager {
     return this.service.getImages(numberPage, numberLimit, filter);
   }
 
-  getPreSignedPutUrl(imageName: string, userUploadEmail: string): Promise<string> {
+  async getPreSignedPutUrl(imageName: string, userUploadEmail: string): Promise<string> {
     if (!imageName) {
       throw new HttpBadRequestError('Нет изображений для загрузки');
     }

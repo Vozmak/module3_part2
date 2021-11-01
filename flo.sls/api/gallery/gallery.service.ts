@@ -1,4 +1,10 @@
-import { GetItemCommand, GetItemInput, UpdateItemCommand, UpdateItemCommandInput } from '@aws-sdk/client-dynamodb';
+import {
+  AttributeValue,
+  GetItemCommand,
+  GetItemInput,
+  UpdateItemCommand,
+  UpdateItemCommandInput,
+} from '@aws-sdk/client-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { HttpBadRequestError, HttpInternalServerError } from '@errors/http';
 import { getEnv } from '@helper/environment';
@@ -6,12 +12,12 @@ import { DynamoClient } from '@services/dynamoDBClient';
 import { S3Service } from '@services/s3.service';
 import { GetObjectOutput } from 'aws-sdk/clients/s3';
 import { Gallery } from './gallery.interface';
-import * as sharp from 'sharp';
 
 export class GalleryService {
   async getImages(page: number, limit: number, filter: string): Promise<Gallery> {
     let images: Array<string | undefined>;
     let total: number;
+
     try {
       const params: GetItemInput = {
         TableName: getEnv('USERS_TABLE_NAME'),
@@ -31,8 +37,8 @@ export class GalleryService {
 
       const { Images } = unmarshall(Item);
 
-      if (Images.length === 0) {
-        throw new HttpBadRequestError('Пользователь загрузил 0 картинок');
+      if (!Images || Images.length === 0) {
+        throw new HttpBadRequestError('User(s) upload 0 images');
       }
 
       if (limit === 0) {
@@ -43,7 +49,7 @@ export class GalleryService {
         images = Images.slice((page - 1) * limit, page * limit).map((img) => img.Path);
       }
 
-      if (page > total || page < 1) throw new HttpBadRequestError(`Страница не найдена`);
+      if (page > total || page < 1) throw new HttpBadRequestError(`Page not found`);
     } catch (e) {
       if (e instanceof HttpBadRequestError) throw new HttpBadRequestError(e.message);
       throw new HttpInternalServerError(e.message);
@@ -64,74 +70,13 @@ export class GalleryService {
 
       imagePutUrl = S3.getPreSignedPutUrl(key, getEnv('IMAGES_BUCKET_NAME'));
 
-      const paramsUser: UpdateItemCommandInput = {
-        TableName: getEnv('USERS_TABLE_NAME'),
-        ExpressionAttributeNames: {
-          '#I': 'Images',
+      const updateAttributeValue = {
+        M: {
+          Path: { S: imagePutUrl.split('?', 1)[0] },
+          Status: { S: 'OPEN' },
         },
-        ExpressionAttributeValues: {
-          ':imgInfo': {
-            L: [
-              {
-                M: {
-                  Path: {
-                    S: imagePutUrl.split('?', 1)[0],
-                  },
-                  Status: {
-                    S: 'OPEN',
-                  },
-                },
-              },
-            ],
-          },
-          ':emptyList': {
-            L: [],
-          },
-        },
-        Key: {
-          UserEmail: {
-            S: userUploadEmail,
-          },
-        },
-        UpdateExpression: 'SET #I = list_append(if_not_exists(#I, :emptyList), :imgInfo)',
       };
-      const paramsAll: UpdateItemCommandInput = {
-        TableName: getEnv('USERS_TABLE_NAME'),
-        ExpressionAttributeNames: {
-          '#I': 'Images',
-        },
-        ExpressionAttributeValues: {
-          ':imgInfo': {
-            L: [
-              {
-                M: {
-                  Path: {
-                    S: imagePutUrl.split('?', 1)[0],
-                  },
-                  Status: {
-                    S: 'OPEN',
-                  },
-                },
-              },
-            ],
-          },
-          ':emptyList': {
-            L: [],
-          },
-        },
-        Key: {
-          UserEmail: {
-            S: 'all',
-          },
-        },
-        UpdateExpression: 'SET #I = list_append(if_not_exists(#I, :emptyList), :imgInfo)',
-      };
-
-      const UpdateItemUser = new UpdateItemCommand(paramsUser);
-      const UpdateItemAll = new UpdateItemCommand(paramsAll);
-
-      await DynamoClient.send(UpdateItemUser);
-      await DynamoClient.send(UpdateItemAll);
+      await this.updateValueDB(userUploadEmail, updateAttributeValue);
     } catch (e) {
       if (e instanceof HttpBadRequestError) {
         throw new HttpBadRequestError(e.message);
@@ -163,75 +108,97 @@ export class GalleryService {
     }
 
     const { Images } = unmarshall(Item);
-    const imageIndex = Images.findIndex((path) => path.Path === imgGetURL);
+    const imageIndex = Images.findIndex((image) => image.Path === imgGetURL && image.Status === 'OPEN');
 
-    const paramsUser: UpdateItemCommandInput = {
-      TableName: getEnv('USERS_TABLE_NAME'),
-      ExpressionAttributeNames: {
-        '#I': 'Images',
+    if (imageIndex === -1) {
+      throw new HttpBadRequestError('Image data not found');
+    }
+
+    const updateAttributeValue = {
+      M: {
+        Path: { S: imgGetURL },
+        Metadata: { S: 'Metadata' },
+        Status: { S: 'CLOSED' },
       },
-      ExpressionAttributeValues: {
-        ':imgInfo': {
-          M: {
-            Path: {
-              S: imgGetURL,
-            },
-            Metadata: {
-              S: 'JSON.stringify(metadata)',
-            },
-            Status: {
-              S: 'CLOSED',
-            },
+    };
+    await this.updateValueDB(userEmail, updateAttributeValue, imageIndex);
+
+    return;
+  }
+
+  async updateValueDB(userEmail: string, attributeValue: AttributeValue, index?: number): Promise<void> {
+    let paramsUser: UpdateItemCommandInput;
+    let paramsAll: UpdateItemCommandInput | undefined;
+
+    if (index) {
+      paramsUser = {
+        TableName: getEnv('USERS_TABLE_NAME'),
+        ExpressionAttributeNames: {
+          '#I': 'Images',
+        },
+        ExpressionAttributeValues: {
+          ':imgInfo': attributeValue,
+        },
+        Key: {
+          UserEmail: {
+            S: userEmail,
           },
         },
-      },
-      Key: {
-        UserEmail: {
-          S: userEmail,
+        UpdateExpression: `SET #I[${index}] = :imgInfo`,
+      };
+      paramsAll = {
+        TableName: getEnv('USERS_TABLE_NAME'),
+        ExpressionAttributeNames: {
+          '#I': 'Images',
         },
-      },
-      UpdateExpression: `SET #I[${imageIndex}] = :imgInfo`,
-    };
-    const paramsAll: UpdateItemCommandInput = {
-      TableName: getEnv('USERS_TABLE_NAME'),
-      ExpressionAttributeNames: {
-        '#I': 'Images',
-      },
-      ExpressionAttributeValues: {
-        ':imgInfo': {
-          L: [
-            {
-              M: {
-                Path: {
-                  S: imgGetURL,
-                },
-                Metadata: {
-                  S: 'JSON.stringify(metadata)',
-                },
-                Status: {
-                  S: 'CLOSED',
-                },
-              },
-            },
-          ],
+        ExpressionAttributeValues: {
+          ':imgInfo': {
+            L: [attributeValue],
+          },
+          ':emptyList': {
+            L: [],
+          },
         },
-        ':emptyList': {
-          L: [],
+        Key: {
+          UserEmail: {
+            S: 'all',
+          },
         },
-      },
-      Key: {
-        UserEmail: {
-          S: 'all',
+        UpdateExpression: 'SET #I = list_append(if_not_exists(#I, :emptyList), :imgInfo)',
+      };
+    } else {
+      paramsUser = {
+        TableName: getEnv('USERS_TABLE_NAME'),
+        ExpressionAttributeNames: {
+          '#I': 'Images',
         },
-      },
-      UpdateExpression: `SET #I[${imageIndex}] = :imgInfo`,
-    };
+        ExpressionAttributeValues: {
+          ':imgInfo': {
+            L: [attributeValue],
+          },
+          ':emptyList': {
+            L: [],
+          },
+        },
+        Key: {
+          UserEmail: {
+            S: userEmail,
+          },
+        },
+        UpdateExpression: 'SET #I = list_append(if_not_exists(#I, :emptyList), :imgInfo)',
+      };
+    }
 
-    const UpdateItemUser = new UpdateItemCommand(paramsUser);
-    const UpdateItemAll = new UpdateItemCommand(paramsAll);
-
-    await DynamoClient.send(UpdateItemUser);
-    await DynamoClient.send(UpdateItemAll);
+    try {
+      const updateCommand = new UpdateItemCommand(paramsUser);
+      await DynamoClient.send(updateCommand);
+      if (paramsAll) {
+        const updateCommandAll = new UpdateItemCommand(paramsAll);
+        await DynamoClient.send(updateCommandAll);
+      }
+    } catch (err) {
+      throw new HttpInternalServerError(err.message);
+    }
 
     return;
   }
