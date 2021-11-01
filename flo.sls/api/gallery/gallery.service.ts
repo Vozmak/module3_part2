@@ -91,6 +91,7 @@ export class GalleryService {
   async saveImgToDB(key: string, metadata: GetObjectOutput, S3: S3Service): Promise<void> {
     const userEmail = key.split('/', 1)[0];
     const imgGetURL: string = S3.getPreSignedGetUrl(key, getEnv('IMAGES_BUCKET_NAME')).split('?', 1)[0];
+    const { ContentLength, ContentType } = metadata;
 
     const params: GetItemInput = {
       TableName: getEnv('USERS_TABLE_NAME'),
@@ -117,7 +118,12 @@ export class GalleryService {
     const updateAttributeValue = {
       M: {
         Path: { S: imgGetURL },
-        Metadata: { S: 'Metadata' },
+        Metadata: {
+          S: JSON.stringify({
+            ContentLength: ContentLength,
+            ContentType: ContentType,
+          }),
+        },
         Status: { S: 'CLOSED' },
       },
     };
