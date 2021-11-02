@@ -1,5 +1,6 @@
 import { GetItemCommand, GetItemInput, GetItemOutput } from '@aws-sdk/client-dynamodb';
 import { HttpBadRequestError, HttpInternalServerError } from '@errors/http';
+import { HttpError } from '@errors/http/http-error';
 import { getEnv } from '@helper/environment';
 import { userValidation } from '@helper/gallery/usersValidator';
 import * as bcryptjs from 'bcryptjs';
@@ -34,12 +35,13 @@ export class AuthManager {
       const userFindResult: GetItemOutput = await DynamoClient.send(GetItem);
       verifyUser = userFindResult.Item;
 
-      if (!verifyUser) throw new HttpBadRequestError(`Пользователь ${user.email} не найден`);
+      if (!verifyUser) throw new HttpError(404, 'Not found', `User ${user.email} not found`);
       // @ts-ignore
       const validate: boolean = await bcryptjs.compare(user.password, userFindResult.Item.Password.S);
-      if (!validate) throw new HttpBadRequestError('Неверный пароль');
+      if (!validate) throw new HttpBadRequestError('Invalid password');
     } catch (e) {
       if (e instanceof HttpBadRequestError) throw new HttpBadRequestError(e.message);
+      else if (e instanceof HttpError) throw new HttpError(e.statusCode, e.name, e.message);
 
       throw new HttpInternalServerError(e.message);
     }
@@ -50,7 +52,7 @@ export class AuthManager {
 
   async signUp(user: User): Promise<SuccessSignup> {
     if (!user || !user.email || !user.password) {
-      throw new HttpBadRequestError('Не указаны данные');
+      throw new HttpBadRequestError('Email and password is required');
     }
 
     const params: GetItemInput = {
@@ -67,11 +69,11 @@ export class AuthManager {
 
     const userVerify: VerifyUser | undefined = userFindResult.Item;
     if (userVerify) {
-      throw new HttpBadRequestError('Пользователь уже зарегестрирован');
+      throw new HttpBadRequestError('User already exist');
     }
 
     if (!userValidation(user)) {
-      throw new HttpBadRequestError('Некорректный ввод email или пароля');
+      throw new HttpBadRequestError('Invalid email or password');
     }
 
     return this.service.signUp(user, DynamoClient);

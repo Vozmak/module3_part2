@@ -16,7 +16,9 @@ export const BucketConfig: AWSPartitial = {
               's3:GetBucketCors',
               's3:GetBucket',
               's3:GetObject',
+              's3:GetObjectAcl',
               's3:PutObject',
+              's3:PutObjectAcl',
             ],
             Resource: [
               'arn:aws:s3:::${file(env.yml):${self:provider.stage}.IMAGES_BUCKET_NAME}',

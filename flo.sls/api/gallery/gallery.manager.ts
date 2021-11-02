@@ -26,7 +26,7 @@ export class GalleryManager {
 
   async getPreSignedPutUrl(imageName: string, userUploadEmail: string): Promise<string> {
     if (!imageName) {
-      throw new HttpBadRequestError('Нет изображений для загрузки');
+      throw new HttpBadRequestError('Not found images for upload');
     }
 
     return this.service.getPreSignedPutUrl(imageName, userUploadEmail);

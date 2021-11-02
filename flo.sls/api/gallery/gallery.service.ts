@@ -7,6 +7,7 @@ import {
 } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { HttpBadRequestError, HttpInternalServerError } from '@errors/http';
+import { HttpError } from '@errors/http/http-error';
 import { getEnv } from '@helper/environment';
 import { DynamoClient } from '@services/dynamoDBClient';
 import { S3Service } from '@services/s3.service';
@@ -66,6 +67,7 @@ export class GalleryService {
     let imagePutUrl: string;
     try {
       const S3 = new S3Service();
+
       const key = `${userUploadEmail}/${imageName}`;
 
       imagePutUrl = S3.getPreSignedPutUrl(key, getEnv('IMAGES_BUCKET_NAME'));
@@ -105,7 +107,7 @@ export class GalleryService {
     const getItemCommand = new GetItemCommand(params);
     const { Item } = await DynamoClient.send(getItemCommand);
     if (!Item) {
-      throw new HttpBadRequestError('User not found.');
+      throw new HttpError(404, 'Not Found', 'User not found.');
     }
 
     const { Images } = unmarshall(Item);

@@ -53,9 +53,6 @@ export const TableConfig: AWSPartitial = {
           ],
           BillingMode: 'PAY_PER_REQUEST',
           TableName: '${self:custom.tablesNames.UsersTable.${self:provider.stage}}',
-          StreamSpecification: {
-            StreamViewType: 'NEW_AND_OLD_IMAGES',
-          },
         },
       },
     },
