@@ -15,6 +15,9 @@ const envs: Record<string, string | undefined> = {
   HIDE_LOGS: process.env.HIDE_LOGS,
   USERS_TABLE_NAME: process.env.USERS_TABLE_NAME,
   JOBS_TABLE_NAME: process.env.JOBS_TABLE_NAME,
+  SECRET: process.env.SECRET,
+  SALTROUNDS: process.env.SALTROUNDS,
+  JOBS_TABLE: process.env.JOBS_TABLE,
 };
 
 export type Stage = 'local' | 'dev' | 'test' | 'prod';
