@@ -1,5 +1,5 @@
-import { lambdaUrl } from '../env.js';
-import {getUser} from "../helpers/getUser.js";
+import { lambdaUrl } from '../../env.js';
+import { getUser } from "../helpers/getUser.js";
 
 if (localStorage.timestamp < Date.now()) {
   localStorage.removeItem("token");
@@ -30,13 +30,13 @@ form.addEventListener("submit", async event => {
 
   if ('errorMessage' in result && result.errorMessage) return alert(result.errorMessage)
 
-  const {token} = result as Token;
+  const { token } = result as Token;
 
   if (!localStorage.token) {
     localStorage.setItem("token", token);
     localStorage.setItem("timestamp", `${Date.now() + 6e5}`);
 
-    window.location.href = `gallery/gallery.html?page=${localStorage.page || 1}`;
+    window.location.href = `gallery.html?page=${localStorage.page || 1}`;
   }
 });
 

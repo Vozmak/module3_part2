@@ -9,13 +9,9 @@
     "allowJs": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
+    "esModuleInterop": true
   },
   "include": [
     "client"
   ],
-  "exclude": [
-    "node_modules",
-    "flo.sls"
-  ]
 }

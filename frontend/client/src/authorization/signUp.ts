@@ -1,5 +1,5 @@
-import { lambdaUrl } from '../env.js';
-import {getUser} from "../helpers/getUser.js";
+import { lambdaUrl } from '../../env.js';
+import { getUser } from "../helpers/getUser.js";
 
 interface User {
     email: string;
@@ -34,12 +34,6 @@ async function signUp(user: User) {
         },
         body: JSON.stringify(user)
     });
-
-    if (response.statusText === 'Unauthorized') {
-        return {
-            errorMessage: 'Пользователь уже зарегистрирован'
-        }
-    }
 
     return await response.json();
 }

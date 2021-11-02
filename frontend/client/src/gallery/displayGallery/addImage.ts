@@ -1,6 +1,6 @@
 // import { getPage } from './helpers/getPage';
 
-import { lambdaUrl } from '../../env.js';
+import { lambdaUrl } from '../../../env.js';
 
 const imgForm = <HTMLFormElement>document.querySelector('.sendImg');
 const imgInput = <HTMLInputElement>document.querySelector('#addImg');

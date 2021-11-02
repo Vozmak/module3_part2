@@ -1,8 +1,8 @@
 // import { getPage } from './helpers/getPage';
 
-import { lambdaUrl } from '../../env.js';
+import { lambdaUrl } from '../../../env.js';
 
-if (!localStorage.token) window.location.href = '../index.html';
+if (!localStorage.token) window.location.href = 'index.html';
 
 if (localStorage.timestamp < Date.now()) {
   localStorage.removeItem('token');
