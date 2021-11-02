@@ -18,3 +18,9 @@ export interface ResponseSuccess {
 export interface Image {
   imageName: string;
 }
+
+export interface UploadValues {
+  Path: string;
+  Status: 'OPEN' | 'CLOSED';
+  Metadata?: string;
+}

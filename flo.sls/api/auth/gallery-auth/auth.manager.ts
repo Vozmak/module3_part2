@@ -29,6 +29,9 @@ export class AuthManager {
           UserEmail: {
             S: user.email,
           },
+          UserData: {
+            S: 'User',
+          },
         },
       };
       const GetItem = new GetItemCommand(params);
@@ -61,12 +64,13 @@ export class AuthManager {
         UserEmail: {
           S: user.email,
         },
+        UserData: {
+          S: 'User',
+        },
       },
     };
-
     const GetItem = new GetItemCommand(params);
     const userFindResult: GetItemOutput = await DynamoClient.send(GetItem);
-
     const userVerify: VerifyUser | undefined = userFindResult.Item;
     if (userVerify) {
       throw new HttpBadRequestError('User already exist');

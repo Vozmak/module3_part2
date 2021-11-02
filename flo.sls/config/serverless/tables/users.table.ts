@@ -40,6 +40,10 @@ export const TableConfig: AWSPartitial = {
               AttributeName: 'UserEmail',
               AttributeType: 'S',
             },
+            {
+              AttributeName: 'UserData',
+              AttributeType: 'S',
+            },
           ],
           // ProvisionedThroughput: {
           //   ReadCapacityUnits: 4,
@@ -49,6 +53,10 @@ export const TableConfig: AWSPartitial = {
             {
               AttributeName: 'UserEmail',
               KeyType: 'HASH',
+            },
+            {
+              AttributeName: 'UserData',
+              KeyType: 'RANGE',
             },
           ],
           BillingMode: 'PAY_PER_REQUEST',
@@ -60,10 +68,10 @@ export const TableConfig: AWSPartitial = {
   custom: {
     tablesNames: {
       UsersTable: {
-        local: '${self:service}-local-gallery',
-        dev: '${self:service}-dev-gallery',
-        test: '${self:service}-test-gallery',
-        prod: '${self:service}-prod-gallery',
+        local: '${self:service}-local-single-table-gallery',
+        dev: '${self:service}-dev-single-table-gallery',
+        test: '${self:service}-test-single-table-gallery',
+        prod: '${self:service}-prod-single-table-gallery',
       },
     },
   },

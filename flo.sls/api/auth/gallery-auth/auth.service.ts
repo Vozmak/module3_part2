@@ -26,12 +26,14 @@ export class AuthService {
           UserEmail: {
             S: user.email,
           },
+          UserData: {
+            S: 'User',
+          },
           Password: {
             S: await bcryptjs.hash(user.password, Number(getEnv('SALTROUNDS', true))),
           },
         },
       };
-
       const PutItem = new PutItemCommand(params);
       await DynamoClient.send(PutItem);
     } catch (e) {
