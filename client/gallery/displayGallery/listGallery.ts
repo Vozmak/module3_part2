@@ -1,5 +1,7 @@
 // import { getPage } from './helpers/getPage';
 
+import { lambdaUrl } from '../../env.js';
+
 if (!localStorage.token) window.location.href = '../index.html';
 
 if (localStorage.timestamp < Date.now()) {
@@ -43,7 +45,7 @@ async function displayImgList(): Promise<void> {
   const limit: string = searchParams.get('limit') || localStorage.limit || '0';
   const filter: string = searchParams.get('filter') || 'all';
 
-  const imgList: Response = await fetch(`https://44qnlsifsc.execute-api.us-east-1.amazonaws.com/test/gallery?page=${page}&limit=${limit}&filter=${filter}`, {
+  const imgList: Response = await fetch(`${lambdaUrl}gallery?page=${page}&limit=${limit}&filter=${filter}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${localStorage.token}`
@@ -58,8 +60,9 @@ async function displayImgList(): Promise<void> {
     } else {
       window.location.href = `gallery.html?page=${localStorage.page}`;
     }
-
-    return alert(error.errorMessage);
+    alert(error.errorMessage);
+    window.stop();
+    return;
   }
 
   const jsonImgList = await imgList.json();

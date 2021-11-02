@@ -1,5 +1,8 @@
 import { HttpBadRequestError } from '@errors/http';
-import { MultipartRequest } from 'lambda-multipart-parser';
+import { getEnv } from '@helper/environment';
+import { S3Service } from '@services/s3.service';
+import { S3EventRecord } from 'aws-lambda';
+import { GetObjectOutput } from 'aws-sdk/clients/s3';
 import { Gallery, Query } from './gallery.interface';
 import { GalleryService } from './gallery.service';
 
@@ -21,11 +24,29 @@ export class GalleryManager {
     return this.service.getImages(numberPage, numberLimit, filter);
   }
 
-  async uploadImages(images: MultipartRequest, userUploadEmail: string): Promise<string> {
-    if (images.files.length === 0) {
-      throw new HttpBadRequestError('Нет изображений для загрузки');
+  async getPreSignedPutUrl(imageName: string, userUploadEmail: string): Promise<string> {
+    if (!imageName) {
+      throw new HttpBadRequestError('Not found images for upload');
     }
 
-    return this.service.uploadImages(images, userUploadEmail);
+    return this.service.getPreSignedPutUrl(imageName, userUploadEmail);
+  }
+
+  async saveImgToDB(uploadInfo: S3EventRecord): Promise<void> {
+    const S3 = new S3Service();
+    const key = decodeURIComponent(uploadInfo.s3.object.key);
+
+    if (!key) {
+      throw new HttpBadRequestError('Key is required');
+    }
+
+    const imageMetadata: GetObjectOutput | null = await S3.get(key, getEnv('IMAGES_BUCKET_NAME'))
+      .then((res) => res)
+      .catch((e) => {
+        if (e.code !== 'NoSuchKey') throw e;
+        throw new HttpBadRequestError('Image not found');
+      });
+
+    return this.service.saveImgToDB(key, imageMetadata, S3);
   }
 }
